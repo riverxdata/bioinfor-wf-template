@@ -1,2 +1,2 @@
 # bioinfor-wf-template
-The template for bioinformatics project
+The template for bioinformatics project using python

@@ -1,0 +1,56 @@
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+
+jobs:
+  unittest_and_e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get changed files in apps folder
+        uses: tj-actions/changed-files@v46.0.5
+        id: changed-files
+        with:
+          dir_names: "true"
+          dir_names_max_depth: 2
+          files: apps/**
+          base: ${{ github.event.pull_request.base.ref }}      
+
+      - name: Unittest changed files
+        id: unittest-changed-files
+        if: steps.changed-files.outputs.all_changed_files != ''
+        run: |
+          pip install -r requirements.txt
+          echo "Running unit tests for changed files in apps folder:"
+          for app in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            make -C $app unittest
+          done
+
+      - name: E2E tests for changed files
+        id: e2e-changed-files
+
+        if: steps.changed-files.outputs.all_changed_files != ''
+        run: |
+          echo "Running E2E tests for changed files in apps folder:"
+          for app in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            if [ -f "$app/Makefile" ]; then
+              make -C $app e2e
+            else
+              echo "No Makefile found in $app, skipping E2E tests."
+            fi
+          done
+
+      - name: Run E2E tests for workflows
+        if: steps.changed-files.outputs.all_changed_files != ''
+        run: |
+          echo "Running E2E tests for workflows:"
+          for workflow in workflows/*; do
+            if [ -f "$workflow/Makefile" ]; then
+              make -C $workflow e2e
+            else
+              echo "No Makefile found in $workflow, skipping E2E tests."
+            fi
+          done

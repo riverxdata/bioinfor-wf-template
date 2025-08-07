@@ -1,9 +1,8 @@
 import pytest
 import subprocess
 from pathlib import Path
-import os
 
-from apps.fastqc.main import run_fastqc
+from workflows.qc.main import run_qc
 
 
 @pytest.fixture
@@ -26,8 +25,11 @@ def dummy_fastq_files(data_dir):
     not (subprocess.run(["docker", "--version"], capture_output=True).returncode == 0),
     reason="Docker is not available",
 )
-def test_run_fastqc_e2e(dummy_fastq_files, data_dir):
-    fastq1, fastq2 = dummy_fastq_files
-    output_dir = data_dir / "fastqc_results"
-    os.makedirs(output_dir, exist_ok=True)
-    run_fastqc(fastq1, fastq2, str(output_dir))
+def test_run_qc_e2e(dummy_fastq_files, data_dir):
+    multiqc_dir = data_dir / "multiqc_results"
+    fastqc_dir = data_dir / "fastqc_results"
+    fastqc_dir.mkdir(exist_ok=True)
+    multiqc_dir.mkdir(exist_ok=True)
+    run_qc(
+        dummy_fastq_files[0], dummy_fastq_files[1], str(fastqc_dir), str(multiqc_dir)
+    )
